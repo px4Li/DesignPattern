@@ -22,10 +22,15 @@
   - [3.3. 重构获得模式 Refactorying to Patterns](#33-重构获得模式-refactorying-to-patterns)
   - [3.4. 重构关键技法](#34-重构关键技法)
   - [3.5. “组件协作”模式](#35-组件协作模式)
-      - [3.5.0.1. Template Method 模板方法](#3501-template-method-模板方法)
-        - [3.5.0.1.1. 动机（Motivation）](#35011-动机motivation)
-        - [3.5.0.1.2. 结构（Structure）](#35012-结构structure)
-        - [要点总结](#要点总结)
+    - [3.5.1. Template Method 模板方法](#351-template-method-模板方法)
+      - [3.5.1.1. 动机（Motivation）](#3511-动机motivation)
+      - [3.5.1.2. 结构（Structure）](#3512-结构structure)
+      - [3.5.1.3. 要点总结](#3513-要点总结)
+    - [3.5.2. Strategy 策略模式](#352-strategy-策略模式)
+      - [动机（Motivation）](#动机motivation)
+      - [模式定义](#模式定义)
+      - [结构（Structure）](#结构structure)
+      - [要点总结](#要点总结)
 
 
 ## 1. 设计模式简介
@@ -180,7 +185,7 @@
     </details>
 
 ### 1.9. 软件设计的目标
-什么是好的软件设计？软件设计的金科玉律：**复用**。所有设计模式的目标就是复用性。
+什么是好的软件设计？软件设计的金科玉律：**复用**。所有设计模式的目标就是复用性。（这里的复用指的是二进制编译单位意义的复用，而不是源代码片段复用）
 
 ## 2. 面向对象设计原则
 ### 2.1. 面向对象设计，为什么？
@@ -271,8 +276,8 @@
   - Template Method
   - Observer / Event
   - Strategy
-##### 3.5.0.1. Template Method 模板方法
-###### 3.5.0.1.1. 动机（Motivation）
+#### 3.5.1. Template Method 模板方法
+##### 3.5.1.1. 动机（Motivation）
 - 在软件构建过程中，对于某一项任务，它常常有**稳定**的整体操作结构，但各个子步骤却有很多**改变**的需求，或者由于固有的原因（比如框架与应用之间的关系）而无法和任务的整体结构同时实现。 
 - 如何在确定**稳定操作**结构的前提下，来灵活应对各个子步骤的**变化或者晚期**实现需求？
   结构化软件设计流程：早绑定Application（晚）调用Library（早）
@@ -398,9 +403,107 @@
     两种极端：都是稳定的，设计模式无意义。全都是变化的，所有的设计模式都失效。
     分辨出软件体系中那些时稳定和变化的
 
-###### 3.5.0.1.2. 结构（Structure）
+##### 3.5.1.2. 结构（Structure）
 
-###### 要点总结
+##### 3.5.1.3. 要点总结
 - Template Method 模式是一种**非常基础性**的设计模式，在面向对象系统中有着大量的应用。它用最简洁的机制（虚函数的多态性）为很多应用程序框架提供了灵活的扩展点（子类继承父类，然后对虚函数重写），是代码复用方面的基本实现结构。
 - 除了可以灵活应对子步骤的变化外，“不要调用我，让我来调用你” 的反向控制结构是 Template Method 的典型应用。（这是站在类库开发人员的角度来说的。）
 - 在具体实现方面，被 Template Method 调用的虚方法可以具有实现，也可以没有任何实现（抽象方法、纯虚方法），但一般推荐将它们设置为 protected 方法。
+
+#### 3.5.2. Strategy 策略模式
+##### 动机（Motivation）
+- 在软件构建过程中，某些对象使用的算法可能多种多样，经常改变，如果将这些算法都编码到对象中，将会使对象变得异常复杂；而且有时候支持不使用的算法也是一个性能负担。
+  违背开放关闭原则，如果怎加新的税收类型。
+  <details><summary>strategy1.cpp</summary>
+  <div>
+
+  ```cpp
+  enum TaxBase{
+    CN_Tax,
+    US_Tax,
+    DE_Tax
+  };
+
+  class SalesOrder{
+    TaxBase tax;
+  public:
+    double CalculateTax(){
+        if(tax == CN_Tax){
+            //cn
+        }
+        else if(tax == US_Tax){
+            //us
+        }
+        else if(tax == DE_Tax){
+            //de
+        }
+    }
+  }
+  ```
+  </div>
+  </details>
+
+  <details><summary>strategy2.cpp</summary>
+  <div>
+
+  ```cpp
+  class TaxStrategy{
+  public:
+    //纯虚函数
+    virtual double Calculate(const Context& context) = 0;
+    //任何一个基类都要一个析构函数
+    virtual ~TaxStrategy(){}
+  };
+
+  class CNTax:public TaxStrategy{
+  public:
+    virtual double Calculate(const Context& context){
+
+    }
+  };
+
+  class USTax:public TaxStrategy{
+  public:
+    virtual double Calculate(const Context& context){
+
+    }
+  };
+
+  class DETax:public TaxStrategy{
+  public:
+    virtual double Calculate(const Context& context){
+
+    }
+  };
+
+  class SalesOrder{
+  private:
+    TaxStrategy* strategy;//这是抽象类，指向不同TaxStrategy的不同子类
+  public:
+    SalesOrder(StrategyFactory* StrategyFactory){
+        this->strategy = strategyFactory->NewStrategy();
+    }
+    ~SalsesOrder(){
+        delete this->strategy; //最为堆对象需要删除
+    }
+    public double CalculateTax(){
+        Context context();
+        double val=strategy->Calculate(context);
+    }
+  };
+  ```
+  </div>
+  </details>
+
+- 如何在运行时根据需要透明地更改对象的算法？将算法与对象本身解耦，从而避免上述问题
+
+##### 模式定义
+定义一系列算法，把它们一个个封装起来，并且使它们可互相替换（支持变化）。该模式使得算法可独立于使用它的客户程序 (稳定) 而变化（扩展，子类化的方式来支持它们的变化）。 ——《设计模式》GoF
+
+##### 结构（Structure）
+
+##### 要点总结
+- Strategy及其子类为组件提供了一系列可重用的算法，从而可以使得类型在**运行时**方便地根据需要在各个算法之间进行切换
+- Strategy模式提供了用条件判断语句以外的另一种选择，消除条件判断语句，就是在解耦合。含有许多条件判断语句的代码通常都需要Strategy模式
+  - 在条件绝对稳定不变的时候可以用if else。否则要使用Strategy模式代替。因为if else不会被使用的部分也要被迫装在到缓存里。
+- 如果Strategy对象没有实例变量，那么各个上下文可以共享同一个Strategy对象，从而节省对象开销。
