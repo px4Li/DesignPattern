@@ -1,4 +1,4 @@
-设计模式学习笔记
+<p style="text-align: center;">设计模式学习笔记（李建忠视频笔记）</p>
 
 - [1. 设计模式简介](#1-设计模式简介)
   - [1.1. 课程目标：](#11-课程目标)
@@ -21,7 +21,11 @@
   - [3.2. 从分装变化角度对模式分类](#32-从分装变化角度对模式分类)
   - [3.3. 重构获得模式 Refactorying to Patterns](#33-重构获得模式-refactorying-to-patterns)
   - [3.4. 重构关键技法](#34-重构关键技法)
-    - [3.4.1. “组件协作”模式](#341-组件协作模式)
+  - [3.5. “组件协作”模式](#35-组件协作模式)
+      - [3.5.0.1. Template Method 模板方法](#3501-template-method-模板方法)
+        - [3.5.0.1.1. 动机（Motivation）](#35011-动机motivation)
+        - [3.5.0.1.2. 结构（Structure）](#35012-结构structure)
+        - [要点总结](#要点总结)
 
 
 ## 1. 设计模式简介
@@ -261,9 +265,142 @@
 - 编译时依赖->运行时依赖  
 - 紧耦合->松耦合 
   
-#### 3.4.1. “组件协作”模式
+### 3.5. “组件协作”模式
 现代软件专业分工之后的第一个结果是 “框架与应用程序的划分”，“组件协作” 模式通过晚期绑定，来实现框架与应用程序之间的松耦合，是二者之间协作时常用的模式。
 - 典型模式有：
   - Template Method
   - Observer / Event
   - Strategy
+##### 3.5.0.1. Template Method 模板方法
+###### 3.5.0.1.1. 动机（Motivation）
+- 在软件构建过程中，对于某一项任务，它常常有**稳定**的整体操作结构，但各个子步骤却有很多**改变**的需求，或者由于固有的原因（比如框架与应用之间的关系）而无法和任务的整体结构同时实现。 
+- 如何在确定**稳定操作**结构的前提下，来灵活应对各个子步骤的**变化或者晚期**实现需求？
+  结构化软件设计流程：早绑定Application（晚）调用Library（早）
+  Library开发人员：（1）开发1,3,5三个步骤
+  <details><summary>template1_lib.cpp</summary>
+  <div>
+
+  ```cpp
+  //程序库开发人员
+  class Library{
+  public:
+      void Step1(){
+          //...
+      }
+      void Step3(){
+          //...
+      }
+      void Step5(){
+          //...
+      }
+  };
+  ```
+  </div>
+  </details>
+  
+  Application开发人员：（1）开发2，4两个步骤（2）程序主流程
+  <details><summary>template1_app.cpp</summary>
+  <div>
+
+  ```cpp
+  //应用程序开发人员
+  class Application{
+  public:
+      bool Step2(){
+          //...
+      }
+      void Step4(){
+          //...
+      }
+  };
+  int main(){
+      Library lib();
+      Application app();
+
+      lib.Step1();
+
+      if(app.Step2())
+          lib.Step3();
+      for(int i{};i<4;i++){
+          app.Step4();
+      }
+      lib.Step5();
+  }
+  ```
+  </div>
+  </details>
+
+  面向对象软件设计流程：晚绑定Library（早）调用Application（晚）
+  Library开发人员：（1）开发1,3,5三个步骤（2）程序主流程
+  <details><summary>template2_lib.cpp</summary>
+  <div>
+
+  ```cpp
+  //程序库开发人员
+  class Library{
+  public:
+  //稳定 template method 的算法骨架，程序主流程
+      void Run(){
+          Step1();
+          if(Step2()){//支持变化->虚函数的多态调用
+              Step3();
+          }
+          for (int{};i<4;i++){
+              Step4();//支持变化->虚函数的多态调用
+          }
+          Step5();
+      }
+      virtual ~Library(){}
+
+  protected:
+      void Step1(){//稳定->非虚函数
+          //...
+      }
+      void Step3(){//稳定
+          //...
+      }
+      void Step5(){//稳定
+          //...
+      }
+      //纯虚函数
+      virtual bool Step2() = 0; //变化
+      virtual void Step4() = 0; //变化
+  };
+  ```
+  </div>
+  </details>
+  
+  Application开发人员：（1）开发2，4两个步骤
+  <details><summary>template2_app.cpp</summary>
+  <div>
+
+  ```cpp
+  //应用程序开发人员
+  class Application ：public Library{
+  protected:
+      virtual bool Step2(){
+          //...子类重写实现
+      }
+      virtual void Step4(){
+          //...子类重写实现
+      }
+  };
+  int main(){
+      Library* pLib=new Application();
+      lib->Run();
+
+      delete pLib;
+  }
+  ```
+  </div>
+  </details>
+
+    两种极端：都是稳定的，设计模式无意义。全都是变化的，所有的设计模式都失效。
+    分辨出软件体系中那些时稳定和变化的
+
+###### 3.5.0.1.2. 结构（Structure）
+
+###### 要点总结
+- Template Method 模式是一种**非常基础性**的设计模式，在面向对象系统中有着大量的应用。它用最简洁的机制（虚函数的多态性）为很多应用程序框架提供了灵活的扩展点（子类继承父类，然后对虚函数重写），是代码复用方面的基本实现结构。
+- 除了可以灵活应对子步骤的变化外，“不要调用我，让我来调用你” 的反向控制结构是 Template Method 的典型应用。（这是站在类库开发人员的角度来说的。）
+- 在具体实现方面，被 Template Method 调用的虚方法可以具有实现，也可以没有任何实现（抽象方法、纯虚方法），但一般推荐将它们设置为 protected 方法。
