@@ -27,10 +27,14 @@
       - [3.5.1.2. 结构（Structure）](#3512-结构structure)
       - [3.5.1.3. 要点总结](#3513-要点总结)
     - [3.5.2. Strategy 策略模式](#352-strategy-策略模式)
-      - [动机（Motivation）](#动机motivation)
-      - [模式定义](#模式定义)
-      - [结构（Structure）](#结构structure)
-      - [要点总结](#要点总结)
+      - [3.5.2.1. 动机（Motivation）](#3521-动机motivation)
+      - [3.5.2.2. 模式定义](#3522-模式定义)
+      - [3.5.2.3. 结构（Structure）](#3523-结构structure)
+      - [3.5.2.4. 要点总结](#3524-要点总结)
+    - [3.5.3. Observer/Event 观察者模式](#353-observerevent-观察者模式)
+      - [3.5.3.1. 动机（Motivation）](#3531-动机motivation)
+      - [3.5.3.2. 模式定义](#3532-模式定义)
+      - [3.5.3.3. 结构（Structure）](#3533-结构structure)
 
 
 ## 1. 设计模式简介
@@ -404,16 +408,17 @@
     分辨出软件体系中那些时稳定和变化的
 
 ##### 3.5.1.2. 结构（Structure）
-
+<p align = "center"> <img src = "images/template_structure.png" /></p>
 ##### 3.5.1.3. 要点总结
 - Template Method 模式是一种**非常基础性**的设计模式，在面向对象系统中有着大量的应用。它用最简洁的机制（虚函数的多态性）为很多应用程序框架提供了灵活的扩展点（子类继承父类，然后对虚函数重写），是代码复用方面的基本实现结构。
 - 除了可以灵活应对子步骤的变化外，“不要调用我，让我来调用你” 的反向控制结构是 Template Method 的典型应用。（这是站在类库开发人员的角度来说的。）
 - 在具体实现方面，被 Template Method 调用的虚方法可以具有实现，也可以没有任何实现（抽象方法、纯虚方法），但一般推荐将它们设置为 protected 方法。
 
 #### 3.5.2. Strategy 策略模式
-##### 动机（Motivation）
+##### 3.5.2.1. 动机（Motivation）
 - 在软件构建过程中，某些对象使用的算法可能多种多样，经常改变，如果将这些算法都编码到对象中，将会使对象变得异常复杂；而且有时候支持不使用的算法也是一个性能负担。
-  违背开放关闭原则，如果怎加新的税收类型。
+  
+  strategy1.cpp违背开放关闭原则，如果增加新的税收类型。
   <details><summary>strategy1.cpp</summary>
   <div>
 
@@ -497,13 +502,125 @@
 
 - 如何在运行时根据需要透明地更改对象的算法？将算法与对象本身解耦，从而避免上述问题
 
-##### 模式定义
+##### 3.5.2.2. 模式定义
 定义一系列算法，把它们一个个封装起来，并且使它们可互相替换（支持变化）。该模式使得算法可独立于使用它的客户程序 (稳定) 而变化（扩展，子类化的方式来支持它们的变化）。 ——《设计模式》GoF
 
-##### 结构（Structure）
+##### 3.5.2.3. 结构（Structure）
+<p alien = "center"><img src ="images/strategy_structure.png"/></p>
 
-##### 要点总结
+##### 3.5.2.4. 要点总结
 - Strategy及其子类为组件提供了一系列可重用的算法，从而可以使得类型在**运行时**方便地根据需要在各个算法之间进行切换
 - Strategy模式提供了用条件判断语句以外的另一种选择，消除条件判断语句，就是在解耦合。含有许多条件判断语句的代码通常都需要Strategy模式
   - 在条件绝对稳定不变的时候可以用if else。否则要使用Strategy模式代替。因为if else不会被使用的部分也要被迫装在到缓存里。
 - 如果Strategy对象没有实例变量，那么各个上下文可以共享同一个Strategy对象，从而节省对象开销。
+
+#### 3.5.3. Observer/Event 观察者模式
+##### 3.5.3.1. 动机（Motivation）
+- 在软件构建过程中，我们需要为某些对象建立一种 “通知依赖关系” ——一个对象（目标对象）的状态发生改变，所有的依赖对象（观察者对象）都将得到通知。如果这样的依赖关系过于紧密，将使软件不能很好地抵御变化。
+  <details><summary>FileSplitter.cpp</summary>
+  <div>
+
+  ```cpp
+  //抽象的通知机制
+  class IProgress{
+  public:
+    virtual void DoProgress(float value) = 0;
+    virtual ~IProgress(){}
+  };
+
+  class FileSplitter{
+    //定义两个成员变量
+    string m_filePath;//路径
+    int m_fileNumber;//个数
+    //增加一个更新进度条
+    //ProgressBar* m_progressBar;//具体通知控件//实现细节（极其容易变化）
+
+    //IProgress* m_iprogress; //抽象的通知机制
+
+    List<IProgress*> m_iprogressList; //多个通知机制
+
+  public:
+  //通过一个构造器给他的参数赋值
+    FileSplitter(const string& filePath, int fileNumber, IProgress* iprogress):
+      m_filePath(filePath), m_fileNumber(fileNumber), //m_progress(iprogress)
+      {
+
+      }
+
+      void addIProgess(IProgress* iprogress){
+        m_iprogressList.add(iprogress);
+      }
+      void removeIProgess(IProgress* iprogress){
+        m_iprogressList.remove(iprogress);
+      }
+      //分割方法
+      void split(){
+        //1.读取大文件
+        //2.分批次向小文件中写入
+        for(int i{};i<m_fileNumber;i++){
+            //...        
+            float progressValue = m_fileNumber;
+            progressValue = (i+1)/m_fileNumber  
+        }
+      }
+  protected:
+    void onProgress(float value){
+        List<IProgress*>::Iterator itor = m_iprogressList.begin(); //通过迭代器取得每一个元素
+        //对迭代器里面的值做DoProgress
+        while(itor != m_iprogressList.end()){
+          (*itor*)->DoProgress(value);
+          itor++;
+    }
+  };
+
+  ```
+  </div>
+  </details>
+
+  <details><summary>MainForm.cpp</summary>
+  <div>
+
+  ```cpp
+  //继承Form父类，其他的继承接口
+  //MainForm 是一个Observe
+  class MainForm : public Form, public IProgress{
+    TextBox* txtFilePath; //文件的全路径
+    TextBox* txtFileNumber;//选择分割文件个数
+    //ProgressBar* progressBar;
+  public:
+    void Button1_Click(){
+        string filePath = texFilePath->getText();
+        int number = atoi(txtFileNumber->getText().c_str());
+        //将以上的参数传递给FileSplitter
+        //FileSplitter splitter(filePath, number, this);//this 就是当前MainForm的指针
+        //FileSplitter来调用split（）这个方法
+
+        ConsoleNotifier cn;
+        FileSplitter splitter(filePath, number);
+        //两个观察者
+        splitter.addIProgress(this);//订阅通知
+        splitter.addIProgress(&cn);//订阅通知
+        splitter.split();
+        splitter.removeIProgress(this);
+    }
+    virtual void DoProgress(float value){
+        progressBar->setValue(value);
+    }
+  };
+  class ConsoleNotifier : publi IProgress{
+  public:
+    virtual void DoProgress(float value){
+        cout << ".";
+    }
+  }
+  ```
+  </div>
+  </details>  
+
+- 使用面向对象技术，可以将这种依赖关系弱化，并形成一种稳定的依赖关系。从而实现软件体系结构的松耦合。
+
+##### 3.5.3.2. 模式定义
+定义对象间的一种一对多（变化）的依赖关系，以便当一个 对象 (Subject) 的状态发生改变时，所有依赖于它的对象都得到通知并自动更新。 ——《设计模式》GoF
+
+##### 3.5.3.3. 结构（Structure）
+<p align = "center"> <img src = "images/observer_structure.png" /></p>
