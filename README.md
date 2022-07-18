@@ -35,6 +35,12 @@
       - [3.5.3.1. 动机（Motivation）](#3531-动机motivation)
       - [3.5.3.2. 模式定义](#3532-模式定义)
       - [3.5.3.3. 结构（Structure）](#3533-结构structure)
+  - [3.6. “单一职责”模式](#36-单一职责模式)
+    - [3.6.1. Decorator 装饰模式](#361-decorator-装饰模式)
+      - [3.6.1.1. 动机（Motivation）](#3611-动机motivation)
+      - [3.6.1.2. 模式定义](#3612-模式定义)
+      - [3.6.1.3. 结构（Structure）](#3613-结构structure)
+      - [3.6.1.4. 要点总结](#3614-要点总结)
 
 
 ## 1. 设计模式简介
@@ -275,8 +281,8 @@
 - 紧耦合->松耦合 
   
 ### 3.5. “组件协作”模式
-现代软件专业分工之后的第一个结果是 “框架与应用程序的划分”，“组件协作” 模式通过晚期绑定，来实现框架与应用程序之间的松耦合，是二者之间协作时常用的模式。
-- 典型模式有：
+- 现代软件专业分工之后的第一个结果是 “框架与应用程序的划分”，“组件协作” 模式通过晚期绑定，来实现框架与应用程序之间的松耦合，是二者之间协作时常用的模式。
+- 典型模式：
   - Template Method
   - Observer / Event
   - Strategy
@@ -409,6 +415,7 @@
 
 ##### 3.5.1.2. 结构（Structure）
 <p align = "center"> <img src = "images/template_structure.png" /></p>
+
 ##### 3.5.1.3. 要点总结
 - Template Method 模式是一种**非常基础性**的设计模式，在面向对象系统中有着大量的应用。它用最简洁的机制（虚函数的多态性）为很多应用程序框架提供了灵活的扩展点（子类继承父类，然后对虚函数重写），是代码复用方面的基本实现结构。
 - 除了可以灵活应对子步骤的变化外，“不要调用我，让我来调用你” 的反向控制结构是 Template Method 的典型应用。（这是站在类库开发人员的角度来说的。）
@@ -624,3 +631,504 @@
 
 ##### 3.5.3.3. 结构（Structure）
 <p align = "center"> <img src = "images/observer_structure.png" /></p>
+
+### 3.6. “单一职责”模式
+- 在软件组件的设计中，如果责任划分的不清晰，使用继承得到的结果往往是随着需求的变化，子类急剧膨胀，同时充斥着重复代码，这时候的关键是划清责任。
+- 典型模式：
+  - Decorator
+  - Bridge
+
+#### 3.6.1. Decorator 装饰模式
+##### 3.6.1.1. 动机（Motivation）
+- 在某些情况下我们可能会“过度地使用继承扩展对象的功能”，由于继承为类型引入的静态特质（见700行），使得这种扩展方式缺乏灵活性；并且随着子类的增多（扩展功能的增多），各种子类的组合（扩展功能的组合）会导致更多子类的膨胀。
+- 如何使“对象功能的扩展”能够根据需要来动态地实现？同时避免“扩展功能的增多”带来的子类膨胀问题？从而使得任何“功能扩展变化”所导致的影响将为最低？
+
+<details><summary>decorator1.cpp</summary>
+<div>
+
+```cpp
+//业务操作
+class Stream{
+public:
+    virtual char Read(int number) = 0;
+    virtual void Seek(int position) = 0;
+    virtual void Write(char data) = 0;
+    virtual ~Stream(){}
+};
+
+//主体类
+class FileStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读文件流
+    }
+    virtual void Seek(int position){
+        //定位文件流
+    }
+    virtual void Write(char data){
+        //写文件流
+    }
+};
+
+class NetworkStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读网络流
+    }
+    virtual void Seek(int position){
+        //定位网络流
+    }
+    virtual void Write(char data){
+        //写网络流
+    }
+};
+
+class MemoryStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读内存流
+    }
+    virtual void Seek(int position){
+        //定位内存流
+    }
+    virtual void Write(char data){
+        //写内存流
+    }
+};
+
+//扩展操作
+class CryptoFileStream: public FileStream{
+public:
+    virtual char Read(int number){
+        //额外的加密操作。。。
+        FileStream::Read(number);//读写文件//静态特质
+    }
+    virtual void Seek(int position){
+        //额外的加密操作。。。
+        FileStream::Seek(position);//定位写文件
+    }
+    virtual void Write(char data){
+        //额外的加密操作。。。
+        FileStream::Write(data);//写文件
+    }
+}；
+
+class CryptoNetworkStream: public NetworkStream{
+public:
+    virtual char Read(int number){
+        //额外的加密操作。。。
+        NetworkStream::Read(number);//读写文件
+    }
+    virtual void Seek(int position){
+        //额外的加密操作。。。
+        NetworkStream::Seek(position);//定位写文件
+    }
+    virtual void Write(char data){
+        //额外的加密操作。。。
+        NetworkStream::Write(data);//写文件
+    }
+}；
+
+class CryptoMemoryStream: public MemoryStream{
+public:
+    virtual char Read(int number){
+        //额外的加密操作。。。
+        MemoryStream::Read(number);//读写文件
+    }
+    virtual void Seek(int position){
+        //额外的加密操作。。。
+        MemoryStream::Seek(position);//定位写文件
+    }
+    virtual void Write(char data){
+        //额外的加密操作。。。
+        MemoryStream::Write(data);//写文件
+    }
+}；
+
+//对文件流进行缓冲
+class BufferedFileStream: public FileStream{
+    //...
+};
+//对网络流进行缓冲
+class BufferedNetworkStream: public NetworkStream{
+    //...
+};
+
+//对内存流进行缓冲
+class BufferedMemoryStream: public MemoryStream{
+    //...
+};
+
+//对文件进行及加密又缓冲
+class CryptoBufferedFileStream: public FileStream{
+    //...
+};
+..........
+
+void Process(){
+    //编译时装配
+    CryptoFileStream *fs1 = new CryptoFileStream();
+    BufferecdFileStream *fs2 = new BufferecdFileStream();
+    CryptoBufferedFileStream *fs3 = new CryptoBufferedFileStream();
+}
+
+```
+</div>
+</details>
+
+类的数量： 
+$$ 1+n+n*m!/2 $$
+Bad Smell 代码被不断的重复
+
+```mermaid
+graph TD;
+    FileStream-->Stream;
+    NetworkStream-->Stream;
+    MemoryStream-->Stream;
+
+    CryptoStream-->FileStream;
+    BufferedStream-->FileStream;
+    CryptoBufferedFileStream-->FileStream;
+
+    CryptoNetworkStream-->NetworkStream;
+    BufferedNetworkStream-->NetworkStream;
+    CryptoBufferedNetworkFileStream-->NetworkStream;
+
+    CryptoMemoryStream-->MemoryStream;
+    BufferedMemoryStream-->MemoryStream;
+    CryptoBufferedMemoryFileStream-->MemoryStream;
+```
+
+重构：
+<details><summary>decorator2.cpp</summary>
+<div>
+
+```cpp
+//业务操作
+class Stream{
+public:
+    virtual char Read(int number) = 0;
+    virtual void Seek(int position) = 0;
+    virtual void Write(char data) = 0;
+    virtual ~Stream(){}
+};
+
+//主体类
+class FileStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读文件流
+    }
+    virtual void Seek(int position){
+        //定位文件流
+    }
+    virtual void Write(char data){
+        //写文件流
+    }
+};
+
+class NetworkStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读网络流
+    }
+    virtual void Seek(int position){
+        //定位网络流
+    }
+    virtual void Write(char data){
+        //写网络流
+    }
+};
+
+class MemoryStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读内存流
+    }
+    virtual void Seek(int position){
+        //定位内存流
+    }
+    virtual void Write(char data){
+        //写内存流
+    }
+};
+
+//扩展操作
+class CryptoStream: public Stream {
+    //base class stream 为CryptoFileStream定义了规范的接口
+    // FileStream* stream;
+    //编译时让它们一样（复用），运行时让它们不一样
+    Stream* stream; //= new FileStream();
+public:
+    //构造器
+    CryptoStream(Stream* stm):stream(stm){
+
+    }
+    virtual char Read(int number){
+        //额外的加密操作。。。
+        stream->Read(number);//读写文件
+    }
+    virtual void Seek(int position){
+        //额外的加密操作。。。
+        stream->Seek(position);//定位写文件
+    }
+    virtual void Write(char data){
+        //额外的加密操作。。。
+        stream->Write(data);//写文件
+    }
+}；
+
+// class CryptoNetworkStream {
+//     // NetworkStream* stream;
+//     Stream* stream; //= new NetworkStream();
+// public:
+//     virtual char Read(int number){
+//         //额外的加密操作。。。
+//         stream->Read(number);//读写文件
+//     }
+//     virtual void Seek(int position){
+//         //额外的加密操作。。。
+//         NetworkStream::Seek(position);//定位写文件
+//     }
+//     virtual void Write(char data){
+//         //额外的加密操作。。。
+//         NetworkStream::Write(data);//写文件
+//     }
+// }；
+
+// class CryptoMemoryStream{
+//     // MemoryStream* stream;
+//     Stream* stream; //= new MemoryStream();
+// public:
+//     virtual char Read(int number){
+//         //额外的加密操作。。。
+//         stream->Read(number);//读写文件
+//     }
+//     virtual void Seek(int position){
+//         //额外的加密操作。。。
+//         MemoryStream::Seek(position);//定位写文件
+//     }
+//     virtual void Write(char data){
+//         //额外的加密操作。。。
+//         MemoryStream::Write(data);//写文件
+//     }
+// }；
+
+//对文件流进行缓冲
+class BufferedStream: public Stream{
+    Stream* stream;
+public:
+    BufferedStream(Stream* stm):stream(stm){
+
+    }
+    //...
+};
+// //对网络流进行缓冲
+// class BufferedNetworkStream: public NetworkStream{
+//     //...
+// };
+
+// //对内存流进行缓冲
+// class BufferedMemoryStream: public MemoryStream{
+//     //...
+// };
+
+// //对文件进行及加密又缓冲
+// class CryptoBufferedFileStream: public FileStream{
+//     //...
+// };
+..........
+void Process(){
+    //运行时装配
+    FileStream* s1 = new FileStream();
+    CryptoStream* s2 = new CryptoStream(s1);
+    BufferedStream* s3 = new BufferedStream(s1);//缓存
+    BufferedStream* s4 = new BufferedStream(s2);//即加密又缓存
+
+}
+```
+</div>
+</details>
+
+<details><summary>decorator3.cpp</summary>
+<div>
+
+```cpp
+//业务操作
+class Stream{
+public:
+    virtual char Read(int number) = 0;
+    virtual void Seek(int position) = 0;
+    virtual void Write(char data) = 0;
+    virtual ~Stream(){}
+};
+
+//主体类
+class FileStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读文件流
+    }
+    virtual void Seek(int position){
+        //定位文件流
+    }
+    virtual void Write(char data){
+        //写文件流
+    }
+};
+
+class NetworkStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读网络流
+    }
+    virtual void Seek(int position){
+        //定位网络流
+    }
+    virtual void Write(char data){
+        //写网络流
+    }
+};
+
+class MemoryStream: public Stream{
+public:
+    virtual char Read(int number){
+        //读内存流
+    }
+    virtual void Seek(int position){
+        //定位内存流
+    }
+    virtual void Write(char data){
+        //写内存流
+    }
+};
+
+//扩展操作
+//装饰类
+DecoratorStream: public Stream{ //这个继承是为了完善接口的规范
+protected:
+    Stream* stream;//主体类的具体实现
+    DecoratorStream(Stream* stm):stream(stm){
+
+    }
+};
+
+class CryptoStream: public DecoratorStream {
+    //base class stream 为CryptoFileStream定义了规范的接口
+    // FileStream* stream;
+    //编译时让它们一样（复用），运行时让它们不一样
+    Stream* stream; //= new FileStream();
+public:
+    //构造器
+    CryptoStream(Stream* stm):DecoratorStream(stm){
+
+    }
+    virtual char Read(int number){
+        //额外的加密操作。。。
+        stream->Read(number);//读写文件//动态特质
+    }
+    virtual void Seek(int position){
+        //额外的加密操作。。。
+        stream->Seek(position);//定位写文件
+    }
+    virtual void Write(char data){
+        //额外的加密操作。。。
+        stream->Write(data);//写文件
+    }
+}；
+
+// class CryptoNetworkStream {
+//     // NetworkStream* stream;
+//     Stream* stream; //= new NetworkStream();
+// public:
+//     virtual char Read(int number){
+//         //额外的加密操作。。。
+//         stream->Read(number);//读写文件
+//     }
+//     virtual void Seek(int position){
+//         //额外的加密操作。。。
+//         NetworkStream::Seek(position);//定位写文件
+//     }
+//     virtual void Write(char data){
+//         //额外的加密操作。。。
+//         NetworkStream::Write(data);//写文件
+//     }
+// }；
+
+// class CryptoMemoryStream{
+//     // MemoryStream* stream;
+//     Stream* stream; //= new MemoryStream();
+// public:
+//     virtual char Read(int number){
+//         //额外的加密操作。。。
+//         stream->Read(number);//读写文件
+//     }
+//     virtual void Seek(int position){
+//         //额外的加密操作。。。
+//         MemoryStream::Seek(position);//定位写文件
+//     }
+//     virtual void Write(char data){
+//         //额外的加密操作。。。
+//         MemoryStream::Write(data);//写文件
+//     }
+// }；
+
+//对文件流进行缓冲
+class BufferedStream: public DecoratorStream{
+    Stream* stream;
+public:
+    BufferedStream(Stream* stm):DecoratorStream(stm){
+
+    }
+    //...
+};
+// //对网络流进行缓冲
+// class BufferedNetworkStream: public NetworkStream{
+//     //...
+// };
+
+// //对内存流进行缓冲
+// class BufferedMemoryStream: public MemoryStream{
+//     //...
+// };
+
+// //对文件进行及加密又缓冲
+// class CryptoBufferedFileStream: public FileStream{
+//     //...
+// };
+..........
+void Process(){
+    //运行时装配
+    FileStream* s1 = new FileStream();
+    CryptoStream* s2 = new CryptoStream(s1);
+    BufferedStream* s3 = new BufferedStream(s1);//缓存
+    BufferedStream* s4 = new BufferedStream(s2);//即加密又缓存
+
+}
+```
+</div>
+</details>
+
+类的数量： 
+$$ 1+n+1+m $$
+
+```mermaid
+graph TD;
+    FileStream-->Stream;
+    NetworkStream-->Stream;
+    MemoryStream-->Stream;
+    DecoratorStream-->Stream;
+    CryptoStream-->DecoratorStream;
+    BufferedStream-->DecoratorStream;
+```
+
+##### 3.6.1.2. 模式定义
+动态组合地给一个对象增加一些额外的职责。就增加功能而言，Decorator模式比生成子类继承更加灵活（消除重复代码&减少子类个数）。一《设计模式》GoF
+
+##### 3.6.1.3. 结构（Structure）
+<p align="center"><img src="/images/decorator_structure.png" /></p>
+
+##### 3.6.1.4. 要点总结
+- 通过采用组合而非继承的手法，Decorator 模式实现了在运行时动态扩展对象功能的能力，而且可以根据需要扩展多个功能。避免了使用继承带来的 “灵活性差” 和“多子类衍生问题”。
+- Decorator 类在接口上表现为 is-a Component 的继承关系，即 Decorator 类继承了 Component 类所具有的接口。但在实现上又表现为 has-a Component 的组合关系，即 Decorator 类又使用了另外一个 Component 类。
+- Decorator 模式的目的并非解决 “多子类衍生的多继承” 问题，Decorator 模式应用的要点在于解决 “主体类在多个方向上的扩展功能”——是为“装饰” 的含义。
